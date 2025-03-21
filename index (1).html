@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiute Night - Parkour Game</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            background: #333;
+        }
+        header {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            text-align: center;
+            padding: 10px 0;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        header h1 {
+            margin: 0;
+        }
+        #outro {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Hiute Night - Parkour Game</h1>
+    </header>
+    <canvas id="gameCanvas"></canvas>
+    <div id="outro">
+        <h2>Congratulations! You completed the game!</h2>
+        <audio id="outroMusic" src="file:///media/fuse/drivefs-894384474e2616a390bc9d340c9b42e2/root/YOU_DONT_KNOW_HOW_MUCH_I_MISS_YOU_edited%20(1).wav"></audio>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game variables
+        let player = {
+            x: 50,
+            y: canvas.height - 70,
+            width: 20,
+            height: 20,
+            color: 'white',
+            speed: 5,
+            jumpPower: 10,
+            isJumping: false,
+            velocityY: 0
+        };
+
+        const gravity = 0.5;
+        const flag = {
+            x: canvas.width - 70,
+            y: canvas.height - 70,
+            width: 20,
+            height: 50,
+            color: 'red'
+        };
+
+        const platforms = [
+            { x: 0, y: canvas.height - 50, width: canvas.width, height: 50 },
+            { x: 100, y: canvas.height - 200, width: 150, height: 10 },
+            { x: 300, y: canvas.height - 350, width: 100, height: 10 },
+            { x: 450, y: canvas.height - 500, width: 50, height: 10 },
+            { x: 600, y: canvas.height - 400, width: 100, height: 10 },
+            { x: 750, y: canvas.height - 250, width: 150, height: 10 },
+            { x: 950, y: canvas.height - 300, width: 200, height: 10 },
+            { x: 1200, y: canvas.height - 450, width: 50, height: 10 },
+            { x: 1300, y: canvas.height - 600, width: 100, height: 10 },
+            { x: 1450, y: canvas.height - 650, width: 150, height: 10 },
+            { x: 1650, y: canvas.height - 500, width: 50, height: 10 },
+            { x: 1750, y: canvas.height - 350, width: 150, height: 10 },
+            { x: 1950, y: canvas.height - 400, width: 50, height: 10 },
+            { x: 2050, y: canvas.height - 250, width: 200, height: 10 },
+            { x: 2300, y: canvas.height - 300, width: 100, height: 10 },
+            { x: 2450, y: canvas.height - 450, width: 150, height: 10 },
+            { x: 2650, y: canvas.height - 500, width: 50, height: 10 },
+            { x: 2750, y: canvas.height - 650, width: 100, height: 10 },
+            { x: 2900, y: canvas.height - 700, width: 200, height: 10 }
+        ];
+
+        let keys = {};
+
+        // Draw player
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        // Draw flag
+        function drawFlag() {
+            ctx.fillStyle = flag.color;
+            ctx.fillRect(flag.x, flag.y, flag.width, flag.height);
+        }
+
+        // Draw platforms
+        function drawPlatforms() {
+            ctx.fillStyle = 'gray';
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            });
+        }
+
+        // Clear canvas
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Update game
+        function update() {
+            clearCanvas();
+            drawPlatforms();
+            drawFlag();
+            drawPlayer();
+            requestAnimationFrame(update);
+        }
+
+        // Player movement
+        window.addEventListener('keydown', function(e) {
+            keys[e.key] = true;
+        });
+
+        window.addEventListener('keyup', function(e) {
+            keys[e.key] = false;
+        });
+
+        function movePlayer() {
+            if (keys['ArrowUp'] && !player.isJumping) {
+                player.isJumping = true;
+                player.velocityY = -player.jumpPower;
+            }
+            if (keys['ArrowLeft']) player.x -= player.speed;
+            if (keys['ArrowRight']) player.x += player.speed;
+
+            player.velocityY += gravity;
+            player.y += player.velocityY;
+
+            if (player.y + player.height >= canvas.height - 50) {
+                player.y = canvas.height - 50 - player.height;
+                player.isJumping = false;
+            }
+
+            platforms.forEach(platform => {
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y < platform.y + platform.height &&
+                    player.y + player.height > platform.y) {
+                    if (player.velocityY > 0) {
+                        player.y = platform.y - player.height;
+                        player.isJumping = false;
+                        player.velocityY = 0;
+                    }
+                }
+            });
+
+            if (player.x < flag.x + flag.width &&
+                player.x + player.width > flag.x &&
+                player.y < flag.y + flag.height &&
+                player.y + player.height > flag.y) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            document.getElementById('outro').style.display = 'block';
+            document.getElementById('outroMusic').play();
+            clearInterval(gameLoop);
+        }
+
+        // Start game loop
+        function gameLoop() {
+            movePlayer();
+            update();
+        }
+
+        setInterval(gameLoop, 1000 / 60);
+    </script>
+</body>
+</html>
